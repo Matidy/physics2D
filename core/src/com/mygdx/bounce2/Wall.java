@@ -6,8 +6,19 @@ import java.lang.Math;
 
 public class Wall {
 	
-	public int quadrant; // <90 = quad1, <180 = quad2, <270 = quad3, <360 = quad4
-	public float angle;
+	// 360 degrees divided horizontally and vertically forms 4 quadrants.
+	// A direction vector is comprised of an x and y value giving a direction in 2D.
+	// The signs of these x and y values (+/-) determine which quadrant the vector is in.
+	// For example, +x, +y describes a vector in the upper-right quadrant, +x, -y in the
+	// bottom-right quadrant. P = +, N = -.
+	public enum Quadrant {
+		PP,
+		PN,
+		NN,
+		NP;
+	}
+	
+	public Quadrant quadrant; // <90 = quad1, <180 = quad2, <270 = quad3, <360 = quad4
 	
 	public Vector2 ball_points[] = new Vector2[2];
 	
@@ -15,59 +26,36 @@ public class Wall {
 	private Vector2 point2;
 	private Vector2 vector;
 
-	private float bearing = 0;
+	private float bearing;
 
 	public Wall (float pos_x1, float pos_y1, float pos_x2, float pos_y2) {
 		point1 = new Vector2(pos_x1, pos_y1);
 		point2 = new Vector2(pos_x2, pos_y2);
 		
-		int dx = (int)(pos_x1 - pos_x2);
-		int dy = (int)(pos_y1 - pos_y2);
+		int dx = (int)(pos_x2 - pos_x1);
+		int dy = (int)(pos_y2 - pos_y1);
 		vector = new Vector2(dx, dy);
 		
-		setQuadrant();
-		
-		if (dx != 0 && dy != 0) {
-			angle = (float) (Math.atan(dy/dx));
-			bearing += angle;
+		if (dx != 0 || dy != 0) {
+			setQuadrant();
+			bearing = (float) Math.abs((Math.atan2(dx, dy)*360/(2*Math.PI))); // get polar coordinates theta - convert to degrees from radians
 		}
+		else /*Handle error case vector = (0, 0)*/;
 	}
 	
 	private void setQuadrant() {
 		float dx = vector.x;
 		float dy = vector.y;
 		
-		if (dx != 0 || dy != 0) { // signs of x/y determine which quadrant bearing is in. i.e. +x -y -> 90-180
-			if (dx == 0) {
-				if (dy < 0) bearing = 180;
-			}
-			else if (dy == 0) {
-				if (dx > 0) bearing = 90;
-				else bearing = 270;
-			}
-			else if (dx > 0 && dy < 0)
-				bearing = 90;
-			else if (dx < 0 && dy < 0)
-				bearing = 180;
-			else if (dx < 0 && dy > 0)
-				bearing = 270;
-		}
-		else /*handle invalid input of point1 == point 2*/;
-		
-		switch((int)(bearing))  { // sin/cos/tan only works for 90 degrees, so a full circle is four 90 degree quadrants
-		case 0:
-			quadrant = 1;
-			break;
-		case 90:
-			quadrant = 2;
-			break;
-		case 180:
-			quadrant = 3;
-			break;
-		case 270:
-			quadrant = 4;
-			break;
-		}
+		//quadrant range 0-89
+		if 		(dx >= 0 && dy > 0) //++
+			quadrant = Quadrant.PP;
+		else if (dx > 0 && dy <= 0) //+-
+			quadrant = Quadrant.PN;
+		else if (dx <= 0 && dy < 0) //--
+			quadrant = Quadrant.NN;
+		else if (dx < 0 && dy >= 0) //-+
+			quadrant = Quadrant.NP;
 	}
 	
 	public Vector2 getPoint1() {
@@ -80,5 +68,8 @@ public class Wall {
 	
 	public Vector2 getVector() {
 		return vector;
+	}
+	public float getBearing() {
+		return bearing;
 	}
 }

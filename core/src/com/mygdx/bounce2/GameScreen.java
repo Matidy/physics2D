@@ -18,6 +18,8 @@ public class GameScreen extends ScreenAdapter {
 	Texture image_ball;
 	ShapeRenderer shapeRenderer;
 	
+	int count = 0;
+	
 	public GameScreen(Main game) {
 		this.game = game;
 		world = new World();
@@ -39,7 +41,7 @@ public class GameScreen extends ScreenAdapter {
 		if (Gdx.input.isKeyPressed(Keys.UP)) world.model_ball.addForce(0, 0.6f);
 		if (Gdx.input.isKeyPressed(Keys.DOWN)) world.model_ball.addForce(0, -0.6f);
 		
-		world.model_ball.update(dt);
+		world.update();
 	}
 	
 	private void draw() {
