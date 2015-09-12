@@ -20,13 +20,14 @@ public class Wall {
 	
 	public Quadrant quadrant; // <90 = quad1, <180 = quad2, <270 = quad3, <360 = quad4
 	
-	public Vector2 ball_points[] = new Vector2[2];
+	public Vector2 ball_point;
 	
 	private Vector2 point1; 
 	private Vector2 point2;
 	private Vector2 vector;
+	private Vector2 vector_orth;
 
-	private float bearing;
+	private double bearing;
 
 	public Wall (float pos_x1, float pos_y1, float pos_x2, float pos_y2) {
 		point1 = new Vector2(pos_x1, pos_y1);
@@ -35,10 +36,11 @@ public class Wall {
 		int dx = (int)(pos_x2 - pos_x1);
 		int dy = (int)(pos_y2 - pos_y1);
 		vector = new Vector2(dx, dy);
+		vector_orth = new Vector2(vector.y, -vector.x);
 		
 		if (dx != 0 || dy != 0) {
 			setQuadrant();
-			bearing = (float) Math.abs((Math.atan2(dx, dy)*360/(2*Math.PI))); // get polar coordinates theta - convert to degrees from radians
+			bearing = Math.abs(Math.atan2(dx, dy)); // get polar coordinates theta (radians).
 		}
 		else /*Handle error case vector = (0, 0)*/;
 	}
@@ -69,7 +71,11 @@ public class Wall {
 	public Vector2 getVector() {
 		return vector;
 	}
-	public float getBearing() {
+	
+	public Vector2 getOrthogonal() {
+		return vector_orth;
+	}
+	public double getBearing() {
 		return bearing;
 	}
 }

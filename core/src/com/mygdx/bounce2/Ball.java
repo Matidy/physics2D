@@ -42,6 +42,14 @@ public class Ball extends Position {
 		return weight; 
 	}
 	
+	public void setX(float new_x) {
+		pos.x = new_x;
+	}
+	
+	public void setY(float new_y) {
+		pos.y = new_y;
+	}
+	
 	public void update () {
 		//y_change += /*(1/60)*/(gravity);
 		pos.y += y_change; 
