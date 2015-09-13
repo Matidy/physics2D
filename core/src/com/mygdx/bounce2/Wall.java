@@ -18,16 +18,15 @@ public class Wall {
 		NP;
 	}
 	
-	public Quadrant quadrant; // <90 = quad1, <180 = quad2, <270 = quad3, <360 = quad4
-	
 	public Vector2 ball_point;
 	
+	private Quadrant quadrant; // <90 = quad1, <180 = quad2, <270 = quad3, <360 = quad4
 	private Vector2 point1; 
 	private Vector2 point2;
 	private Vector2 vector;
 	private Vector2 vector_orth;
 
-	private double bearing;
+	private double theta; //taken anti-clockwise from +x axis.
 
 	public Wall (float pos_x1, float pos_y1, float pos_x2, float pos_y2) {
 		point1 = new Vector2(pos_x1, pos_y1);
@@ -40,7 +39,7 @@ public class Wall {
 		
 		if (dx != 0 || dy != 0) {
 			setQuadrant();
-			bearing = Math.abs(Math.atan2(dx, dy)); // get polar coordinates theta (radians).
+			theta = Math.atan2(dy, dx); // get polar coordinates theta (radians).
 		}
 		else /*Handle error case vector = (0, 0)*/;
 	}
@@ -75,7 +74,10 @@ public class Wall {
 	public Vector2 getOrthogonal() {
 		return vector_orth;
 	}
-	public double getBearing() {
-		return bearing;
+	public double getTheta() {
+		return theta;
+	}
+	public Quadrant getQuadrant() {
+		return quadrant;
 	}
 }
