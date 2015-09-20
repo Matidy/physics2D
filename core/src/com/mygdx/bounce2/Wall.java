@@ -44,6 +44,13 @@ public class Wall {
 		else /*Handle error case vector = (0, 0)*/;
 	}
 	
+	public Vector2  getPoint1() 	{ return point1; }
+	public Vector2  getPoint2() 	{ return point2; }
+	public Vector2  getVector() 	{ return vector; }
+	public Vector2  getOrthogonal() { return vector_orth; }
+	public double   getTheta() 		{ return theta; }
+	public Quadrant getQuadrant() 	{ return quadrant; }
+	
 	private void setQuadrant() {
 		float dx = vector.x;
 		float dy = vector.y;
@@ -59,25 +66,5 @@ public class Wall {
 			quadrant = Quadrant.NP;
 	}
 	
-	public Vector2 getPoint1() {
-		return point1;
-	}
 	
-	public Vector2 getPoint2() {
-		return point2;
-	}
-	
-	public Vector2 getVector() {
-		return vector;
-	}
-	
-	public Vector2 getOrthogonal() {
-		return vector_orth;
-	}
-	public double getTheta() {
-		return theta;
-	}
-	public Quadrant getQuadrant() {
-		return quadrant;
-	}
 }

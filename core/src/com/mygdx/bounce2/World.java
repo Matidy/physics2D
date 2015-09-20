@@ -6,13 +6,16 @@ import java.util.ArrayList;
 import com.badlogic.gdx.math.Vector2;
 
 public class World {
-	final double gravity;
+	final static float gravity = 9.8f;
+	final static float air_resistance = 3.5f;
+	final static float move_speed = 30f;
 	
 	public Ball model_ball;
 	public List<Wall> walls;
 	
+	private Wall collision_wall;
+	
 	public World() {
-		gravity = -9.8f;
 		model_ball = new Ball(150, 300, 10, 0);
 		walls = new ArrayList<Wall>(0);
 		
@@ -33,13 +36,25 @@ public class World {
 		walls.add(new Wall(0, 65, 30, 50)); //PN
 		walls.add(new Wall(30, 50, 270, 50)); //horizontal right
 		walls.add(new Wall(270, 50, 300, 65)); //PP
+		
+		//ceiling
+		walls.add(new Wall(300, 535, 270, 550)); //NP
+		walls.add(new Wall(270, 550, 30, 550)); //horizontal left
+		walls.add(new Wall(30, 550, 0, 535)); //NN
+		
+		//Side wall
+		walls.add(new Wall(300, 65, 300, 535));
+		walls.add(new Wall(0, 535, 0, 65));
+		/*//sheer
+		walls.add(new Wall(300, 65, 250, 600)); //broken*/
+		
 		for (Wall wall: walls) {
 			wall.ball_point = getRelevantBallPoint(wall, model_ball);
 		}	
 	}
 	
-	public void checkCollision() {
-		//System.out.println("'checkCollision' reached");
+	private Wall checkCollision() {
+		Wall collision_wall = null;
 		Vector2 ball_point;
 		Vector2 wall_vector;
 		Vector2 point1;
@@ -71,7 +86,7 @@ public class World {
 					wall_lb = point1.x + (tolerance_distance*(float)Math.cos(orth_angle));
 					if (ball_x <= point1.x && ball_x > wall_lb
 					 || ball_x >= point1.x && ball_x < wall_lb)
-						simulateCollision();
+						collision_wall = wall;
 				}
 			}
 			if (ball_x >= point1.x && ball_x <= point2.x
@@ -88,22 +103,35 @@ public class World {
 				System.out.println("Lower y bound: " + wall_lb + "\n");*/
 				if (ball_y <= wall_ub && ball_y > wall_lb
 				 || ball_y >= wall_ub && ball_y < wall_lb)
-					simulateCollision(); //should replace with return walls that the ball has collided with and then run simulateCollision() from update.
-			
-				
+					collision_wall = wall;
 			}
 		}
+		return collision_wall;
 	}
 	
 	private void simulateCollision() {
-		System.out.println("'simulate' reached");
-		//model_ball.getX(); 
+		Vector2 collision_point;
+		collision_point = findIntersection(model_ball.getDirection(), model_ball.getPos(), collision_wall.getVector(), collision_wall.getPoint1());
 		model_ball.setX(150);
 		model_ball.setY(300);
 	}
 	
+	// Accepts two 2D vectors and finds the point at which they intersect
+	// Assumes the provided vectors are not parallel.
+	public Vector2 findIntersection(Vector2 vec1, Vector2 c1, Vector2 vec2, Vector2 c2) {
+		Vector2 intersection = new Vector2();
+		float scalar1;
+		scalar1 = (c2.x+vec2.x*((c1.y-c2.y)/vec2.y)-c1.x)/   //Scalar found via. setting vectors equal to each other
+				  (vec1.x-vec1.y*vec2.x/vec2.y);			 //to get 2 simultaneous equations, then using substitution
+												 			 //and rearranging to get an equation for scalar1.
+		
+		intersection.x = c1.x + vec1.x*scalar1;
+		intersection.y = c1.y + vec1.y*scalar1;
+		return intersection;
+	}
+	
 	// Finds the point on the ball that each wall is closest to.
-	public Vector2 getRelevantBallPoint (Wall wall, Ball ball) {
+	private Vector2 getRelevantBallPoint (Wall wall, Ball ball) {
 		double x1, y1;/*, x2, y2;*/
 		double bearing_orth = (wall.getTheta()-(0.5*Math.PI))%(2*Math.PI); // +90(1/2PIr) as radius of circle is the normal to the wall
 		Vector2 point;
@@ -125,9 +153,12 @@ public class World {
 		return walls;
 	}
 
-	public void update() {
-		checkCollision();
-		model_ball.update();
+	public void update(float dt) {
+		collision_wall = checkCollision();
+		if (collision_wall != null) {
+			simulateCollision();
+		}
+		model_ball.update(dt);
 	}
 }
 

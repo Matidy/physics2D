@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.Input.Keys;
 
 public class GameScreen extends ScreenAdapter {
@@ -17,8 +18,7 @@ public class GameScreen extends ScreenAdapter {
 	World world;
 	Texture image_ball;
 	ShapeRenderer shapeRenderer;
-	
-	int count = 0;
+	boolean pressed = false;
 	
 	public GameScreen(Main game) {
 		this.game = game;
@@ -35,13 +35,35 @@ public class GameScreen extends ScreenAdapter {
 	}
 	
 	private void update(float dt) {
+		//Debug Keys
+		if (Gdx.input.isKeyPressed(Keys.T)){
+			int x = Gdx.input.getX();
+			int y = Gdx.input.getY();
+			Wall wall1 = world.walls.get(0);
+			Wall wall2 = world.walls.get(1);
+			Vector2 intersection_point = world.findIntersection(wall1.getVector(), wall1.getPoint1(),
+																wall2.getVector(), wall2.getPoint1());
+			System.out.println("Mouse pos: "+x+", "+(600-y));
+			System.out.println("Inter point: "+intersection_point.x+", "+intersection_point.y);
+		}
 		
-		if (Gdx.input.isKeyPressed(Keys.RIGHT)) world.model_ball.addForce(0.6f, 0);
-		if (Gdx.input.isKeyPressed(Keys.LEFT)) world.model_ball.addForce(-0.6f, 0);
-		if (Gdx.input.isKeyPressed(Keys.UP)) world.model_ball.addForce(0, 0.6f);
-		if (Gdx.input.isKeyPressed(Keys.DOWN)) world.model_ball.addForce(0, -0.6f);
-		
-		world.update();
+		// Arrow key controls
+		//if(!pressed) {
+			if (Gdx.input.isKeyPressed(Keys.RIGHT) ) {
+				world.model_ball.applyForce(World.move_speed*dt, new Vector2(1, 0));
+				//pressed = true;
+			}
+		if (Gdx.input.isKeyPressed(Keys.LEFT))
+			world.model_ball.applyForce(World.move_speed*dt, new Vector2(-1, 0));
+		if (Gdx.input.isKeyPressed(Keys.UP))
+			world.model_ball.applyForce(World.move_speed*dt, new Vector2(0,  1));
+		if (Gdx.input.isKeyPressed(Keys.DOWN))
+			world.model_ball.applyForce(World.move_speed*dt, new Vector2(0, -1));
+		//}
+		/*else if (!Gdx.input.isKeyPressed(Keys.RIGHT)) {
+			pressed = false;
+		}*/
+		world.update(dt);
 	}
 	
 	private void draw() {

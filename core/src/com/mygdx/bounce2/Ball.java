@@ -7,40 +7,28 @@ public class Ball extends Position {
 
 	
 	private Vector2 pos;
+	private Vector2 direction;
+	private float speed;
 	private float radius;
 	private int weight;
 	
 	Rectangle rec;
-	private float y_change;
-	private float x_change;
-	private float gravity = -9.8f;
-	private float friction = 0.05f;
 	
 	public Ball(float posx, float posy, float radius, int weight) {
 		pos = new Vector2(posx, posy);
 		this.radius = radius;
 		this.weight = weight;
+		direction = new Vector2(0, 0);
+		speed = 0;
 	}
 	
-	public Vector2 getPos() {
-		return pos;
-	}
-	
-	public float getX() {
-		return pos.x;
-	}
-	
-	public float getY() {
-		return pos.y;
-	}
-	
-	public float getRadius() {
-		return radius;
-	}
-	
-	public int getWeight() {
-		return weight; 
-	}
+	public Vector2 getPos() 	  { return pos; }
+	public float   getX() 		  { return pos.x; }
+	public float   getY() 		  { return pos.y; }
+	public Vector2 getDirection() { return direction; }
+	public float   getSpeed() 	  { return speed; }
+	public float   getRadius() 	  { return radius; }
+	public int	   getWeight()	  { return weight; }
 	
 	public void setX(float new_x) {
 		pos.x = new_x;
@@ -50,20 +38,30 @@ public class Ball extends Position {
 		pos.y = new_y;
 	}
 	
-	public void update () {
-		//y_change += /*(1/60)*/(gravity);
-		pos.y += y_change; 
-		pos.x += x_change;
+	public void update (float dt) {
+		//Gravity
+		//applyForce(World.gravity*dt, new Vector2(0, -1));
 		
-		if (x_change > 0) x_change -= friction*x_change;
-		if (x_change < 0) x_change += friction*-x_change;
-		if (y_change > 0) y_change -= friction*y_change;
-		if (y_change < 0) y_change += friction*-y_change;
+		//Air resistance
+		if (speed < 0.1) {
+			speed = 0; //Hard stop.
+		}
+		else {
+			applyForce(World.air_resistance*speed*dt, new Vector2(-direction.x,  -direction.y));
+		}
+		//Update position
+		pos.x = pos.x + speed*direction.x;
+		pos.y = pos.y + speed*direction.y;
 	}
 	
-	public void addForce (float x_force, float y_force) {
-		x_change += x_force;
-		y_change += y_force;
+	public void applyForce (float force, Vector2 direction) {
+		//Convert to unit vector.
+		direction.nor();
+		
+		this.direction.x = this.direction.x*speed + direction.x*force;
+		this.direction.y = this.direction.y*speed + direction.y*force;
+		speed = this.direction.len();
+		this.direction.nor();
 	}
 
 }
