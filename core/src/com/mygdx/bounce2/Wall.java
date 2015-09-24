@@ -35,7 +35,7 @@ public class Wall {
 		int dx = (int)(pos_x2 - pos_x1);
 		int dy = (int)(pos_y2 - pos_y1);
 		vector = new Vector2(dx, dy);
-		vector_orth = new Vector2(vector.y, -vector.x);
+		vector_orth = new Vector2(-vector.y, vector.x);// orth:90 anti-clockwise
 		
 		if (dx != 0 || dy != 0) {
 			setQuadrant();
@@ -65,6 +65,4 @@ public class Wall {
 		else if (dx < 0 && dy >= 0) //-+
 			quadrant = Quadrant.NP;
 	}
-	
-	
 }

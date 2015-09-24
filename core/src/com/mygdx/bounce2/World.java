@@ -109,28 +109,61 @@ public class World {
 		return collision_wall;
 	}
 	
-	private void simulateCollision() {
+	private void simulateCollision(Wall collision_wall) {
+
+		// Set ball so the point the collided with the wall is where the ball's vector and the wall's vector intersect
 		Vector2 collision_point;
-		collision_point = findIntersection(model_ball.getDirection(), model_ball.getPos(), collision_wall.getVector(), collision_wall.getPoint1());
-		model_ball.setX(150);
-		model_ball.setY(300);
+		Vector2 relevant_ball_point = new Vector2(model_ball.getX()+collision_wall.ball_point.x,
+												  model_ball.getY()+collision_wall.ball_point.y);
+		collision_point = findIntersection(model_ball.getDirection(), relevant_ball_point, collision_wall.getVector(), collision_wall.getPoint1());
+		model_ball.setX(collision_point.x + collision_wall.getOrthogonal().nor().x*(model_ball.getRadius()+0.2f));
+		model_ball.setY(collision_point.y + collision_wall.getOrthogonal().nor().y*(model_ball.getRadius()+0.2f));
+		
+		//Calculate new direction vector and force imparted into the wall.
+		Vector2 wall_normal = collision_wall.getOrthogonal().nor();
+		Vector2 scnd_term = new Vector2();
+		Vector2 ball_direction = new Vector2();
+		Vector2 new_ball_direction = new Vector2();
+		// Equation: r=d-2(d.n)n // r-reflection vector
+								 // n-collision surface normal
+								 // d-incidence vector
+		ball_direction.x = model_ball.getDirection().x*model_ball.getSpeed();
+		ball_direction.y = model_ball.getDirection().y*model_ball.getSpeed();
+		scnd_term.x = wall_normal.dot(ball_direction)*wall_normal.x*2;//2(d.n)n
+		scnd_term.y = wall_normal.dot(ball_direction)*wall_normal.y*2;
+		new_ball_direction.x = ball_direction.x - scnd_term.x;
+		new_ball_direction.y = ball_direction.y - scnd_term.y;
+		
+		model_ball.setSpeed(new_ball_direction.len());
+		model_ball.setDirection(new_ball_direction);
 	}
 	
 	// Accepts two 2D vectors and finds the point at which they intersect
 	// Assumes the provided vectors are not parallel.
+	//////////////
 	public Vector2 findIntersection(Vector2 vec1, Vector2 c1, Vector2 vec2, Vector2 c2) {
 		Vector2 intersection = new Vector2();
-		float scalar1;
-		scalar1 = (c2.x+vec2.x*((c1.y-c2.y)/vec2.y)-c1.x)/   //Scalar found via. setting vectors equal to each other
-				  (vec1.x-vec1.y*vec2.x/vec2.y);			 //to get 2 simultaneous equations, then using substitution
-												 			 //and rearranging to get an equation for scalar1.
+		float scalar;
+		if(vec2.y==0) {
+			scalar = (c1.x+vec1.x*(c2.y-c1.y)/vec1.y-c2.x)/     //Special case for y2==0
+					  vec2.x;
+			
+			intersection.x = c2.x + vec2.x*scalar;
+			intersection.y = c2.y + vec2.y*scalar;
+		}
+		else {
+			scalar = (c2.x+vec2.x*((c1.y-c2.y)/vec2.y)-c1.x)/   //Scalar found via. setting vectors equal to each other
+					  (vec1.x-vec1.y*vec2.x/vec2.y);			//to get 2 simultaneous equations, then using substitution
+																//and rearranging to get an equation for scalar1.
+			intersection.x = c1.x + vec1.x*scalar;
+			intersection.y = c1.y + vec1.y*scalar;									 			 
+		}
 		
-		intersection.x = c1.x + vec1.x*scalar1;
-		intersection.y = c1.y + vec1.y*scalar1;
 		return intersection;
 	}
 	
 	// Finds the point on the ball that each wall is closest to.
+	///////////////
 	private Vector2 getRelevantBallPoint (Wall wall, Ball ball) {
 		double x1, y1;/*, x2, y2;*/
 		double bearing_orth = (wall.getTheta()-(0.5*Math.PI))%(2*Math.PI); // +90(1/2PIr) as radius of circle is the normal to the wall
@@ -154,12 +187,15 @@ public class World {
 	}
 
 	public void update(float dt) {
+		System.out.println("x: "+model_ball.getX());
+		System.out.println("y: "+model_ball.getY());
+		//Update objects
+		model_ball.update(dt);
+		
+		//Check/simulate collisions
 		collision_wall = checkCollision();
 		if (collision_wall != null) {
-			simulateCollision();
+			simulateCollision(collision_wall);
 		}
-		model_ball.update(dt);
 	}
 }
-
-

@@ -46,6 +46,10 @@ public class GameScreen extends ScreenAdapter {
 			System.out.println("Mouse pos: "+x+", "+(600-y));
 			System.out.println("Inter point: "+intersection_point.x+", "+intersection_point.y);
 		}
+		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
+			world.model_ball.setX(150);
+			world.model_ball.setY(300);
+		}
 		
 		// Arrow key controls
 		//if(!pressed) {

@@ -1,18 +1,15 @@
 package com.mygdx.bounce2;
 
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
 public class Ball extends Position {
 
-	
 	private Vector2 pos;
 	private Vector2 direction;
+	private double theta;
 	private float speed;
 	private float radius;
 	private int weight;
-	
-	Rectangle rec;
 	
 	public Ball(float posx, float posy, float radius, int weight) {
 		pos = new Vector2(posx, posy);
@@ -30,12 +27,25 @@ public class Ball extends Position {
 	public float   getRadius() 	  { return radius; }
 	public int	   getWeight()	  { return weight; }
 	
+	public double getTheta() {
+		return theta;
+	}
+	
 	public void setX(float new_x) {
 		pos.x = new_x;
 	}
 	
 	public void setY(float new_y) {
 		pos.y = new_y;
+	}
+	
+	public void setDirection(Vector2 new_dir) {
+		direction = new_dir;
+		direction.nor();
+	}
+	
+	public void setSpeed(float new_speed) {
+		speed = new_speed;
 	}
 	
 	public void update (float dt) {
@@ -52,6 +62,7 @@ public class Ball extends Position {
 		//Update position
 		pos.x = pos.x + speed*direction.x;
 		pos.y = pos.y + speed*direction.y;
+		setTheta();
 	}
 	
 	public void applyForce (float force, Vector2 direction) {
@@ -62,6 +73,10 @@ public class Ball extends Position {
 		this.direction.y = this.direction.y*speed + direction.y*force;
 		speed = this.direction.len();
 		this.direction.nor();
+	}
+	
+	private void setTheta() {
+		theta = Math.atan2(pos.y, pos.x);
 	}
 
 }
