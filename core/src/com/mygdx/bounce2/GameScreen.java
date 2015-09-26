@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.Input.Keys;
 
 public class GameScreen extends ScreenAdapter {
@@ -47,26 +48,24 @@ public class GameScreen extends ScreenAdapter {
 			System.out.println("Inter point: "+intersection_point.x+", "+intersection_point.y);
 		}
 		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
-			world.model_ball.setX(150);
-			world.model_ball.setY(300);
+			world.model_balls.get(0).setX(150);
+			world.model_balls.get(0).setY(300);
 		}
 		
 		// Arrow key controls
-		//if(!pressed) {
-			if (Gdx.input.isKeyPressed(Keys.RIGHT) ) {
-				world.model_ball.applyForce(World.move_speed*dt, new Vector2(1, 0));
-				//pressed = true;
-			}
+		if (Gdx.input.isKeyPressed(Keys.RIGHT))
+			world.model_balls.get(0).applyForce(World.move_speed*dt, new Vector2(1, 0));	
 		if (Gdx.input.isKeyPressed(Keys.LEFT))
-			world.model_ball.applyForce(World.move_speed*dt, new Vector2(-1, 0));
+			world.model_balls.get(0).applyForce(World.move_speed*dt, new Vector2(-1, 0));
 		if (Gdx.input.isKeyPressed(Keys.UP))
-			world.model_ball.applyForce(World.move_speed*dt, new Vector2(0,  1));
+			world.model_balls.get(0).applyForce(World.move_speed*dt, new Vector2(0,  1));
 		if (Gdx.input.isKeyPressed(Keys.DOWN))
-			world.model_ball.applyForce(World.move_speed*dt, new Vector2(0, -1));
-		//}
-		/*else if (!Gdx.input.isKeyPressed(Keys.RIGHT)) {
-			pressed = false;
-		}*/
+			world.model_balls.get(0).applyForce(World.move_speed*dt, new Vector2(0, -1));
+		
+		// Mouse input
+		if (Gdx.input.isButtonPressed(Buttons.LEFT))
+			world.addBall(new Vector2(Gdx.input.getX(), 600-Gdx.input.getY()), 10f, 10);
+		
 		world.update(dt);
 	}
 	
@@ -76,16 +75,20 @@ public class GameScreen extends ScreenAdapter {
 		
 		List<Wall> walls = world.walls;
 		shapeRenderer.begin(ShapeType.Line);
-		shapeRenderer.setColor(0f, 0f, 0f, 1);
+		shapeRenderer.setColor(0f, 0f, 0f, 1f);
 		for (Wall wall : walls ) {
 			shapeRenderer.line(wall.getPoint1(), wall.getPoint2());
 		}
 		shapeRenderer.end();
 		
 		shapeRenderer.begin(ShapeType.Filled);
-		shapeRenderer.setColor(0f, 1f, 0.3f, 1f);
-		shapeRenderer.circle(world.model_ball.getX(), 
-				world.model_ball.getY(), world.model_ball.getRadius());
+		shapeRenderer.setColor(0f, 1f, 0.4f, 1f);
+		for (int i=0; i<world.model_balls.size(); i++) {
+			if (i==1) shapeRenderer.setColor(0f, 0.4f, 1f, 1f);; 
+			shapeRenderer.circle(world.model_balls.get(i).getX(), 
+								 world.model_balls.get(i).getY(), 
+								 world.model_balls.get(i).getRadius());
+		}
 		shapeRenderer.end();
 	}
 }

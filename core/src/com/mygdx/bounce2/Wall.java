@@ -2,6 +2,7 @@ package com.mygdx.bounce2;
 
 import com.badlogic.gdx.math.Vector2;
 import java.lang.Math;
+import java.util.ArrayList;
 
 
 public class Wall {
@@ -18,7 +19,7 @@ public class Wall {
 		NP;
 	}
 	
-	public Vector2 ball_point;
+	public ArrayList<Vector2> ball_points;
 	
 	private Quadrant quadrant; // <90 = quad1, <180 = quad2, <270 = quad3, <360 = quad4
 	private Vector2 point1; 
@@ -29,6 +30,7 @@ public class Wall {
 	private double theta; //taken anti-clockwise from +x axis.
 
 	public Wall (float pos_x1, float pos_y1, float pos_x2, float pos_y2) {
+		ball_points = new ArrayList<Vector2>(0);
 		point1 = new Vector2(pos_x1, pos_y1);
 		point2 = new Vector2(pos_x2, pos_y2);
 		

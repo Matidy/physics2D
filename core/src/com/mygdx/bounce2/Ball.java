@@ -45,20 +45,21 @@ public class Ball extends Position {
 	}
 	
 	public void setSpeed(float new_speed) {
-		speed = new_speed;
+		if (new_speed < 0.25) {
+			speed = 0; //Hard stop.
+		}
+		else {
+			speed = new_speed;
+		}
 	}
 	
 	public void update (float dt) {
 		//Gravity
-		//applyForce(World.gravity*dt, new Vector2(0, -1));
+		applyForce(World.gravity*dt, new Vector2(0, -1));
 		
 		//Air resistance
-		if (speed < 0.1) {
-			speed = 0; //Hard stop.
-		}
-		else {
-			applyForce(World.air_resistance*speed*dt, new Vector2(-direction.x,  -direction.y));
-		}
+		applyForce(World.air_resistance*speed*dt, new Vector2(-direction.x,  -direction.y));
+		
 		//Update position
 		pos.x = pos.x + speed*direction.x;
 		pos.y = pos.y + speed*direction.y;
@@ -71,7 +72,7 @@ public class Ball extends Position {
 		
 		this.direction.x = this.direction.x*speed + direction.x*force;
 		this.direction.y = this.direction.y*speed + direction.y*force;
-		speed = this.direction.len();
+		setSpeed(this.direction.len());
 		this.direction.nor();
 	}
 	
