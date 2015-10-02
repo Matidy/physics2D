@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 public class Ball extends Position {
 
 	private Vector2 pos;
+	private Vector2 prev_pos;
 	private Vector2 direction;
 	private double theta;
 	private float speed;
@@ -13,6 +14,7 @@ public class Ball extends Position {
 	
 	public Ball(float posx, float posy, float radius, int weight) {
 		pos = new Vector2(posx, posy);
+		prev_pos = new Vector2(pos);
 		this.radius = radius;
 		this.weight = weight;
 		direction = new Vector2(0, 0);
@@ -20,6 +22,7 @@ public class Ball extends Position {
 	}
 	
 	public Vector2 getPos() 	  { return pos; }
+	public Vector2 getPrevPos()   { return prev_pos; }
 	public float   getX() 		  { return pos.x; }
 	public float   getY() 		  { return pos.y; }
 	public Vector2 getDirection() { return direction; }
@@ -61,6 +64,7 @@ public class Ball extends Position {
 		applyForce(World.air_resistance*speed*dt, new Vector2(-direction.x,  -direction.y));
 		
 		//Update position
+		prev_pos = new Vector2(pos);
 		pos.x = pos.x + speed*direction.x;
 		pos.y = pos.y + speed*direction.y;
 		setTheta();
@@ -76,8 +80,17 @@ public class Ball extends Position {
 		this.direction.nor();
 	}
 	
+	// Find the point on the ball that's x coordinate is inline with another given x coordinate.
+	///////////////
+	// If y<0 then the point is invalid (returns NaN)
+	public float getCorrespondingY(float x) {
+		float y;
+		y = (float)(Math.sqrt(getRadius()*getRadius() - (x-getX())*(x-getX())) - getY());
+		return y;	
+	}
+	
 	private void setTheta() {
 		theta = Math.atan2(pos.y, pos.x);
 	}
-
+	
 }

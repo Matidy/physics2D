@@ -58,13 +58,15 @@ public class Wall {
 		float dy = vector.y;
 		
 		//quadrant range 0-89
-		if 		(dx >= 0 && dy > 0) //++
+		if 		(dx > 0 && dy >= 0) //++
 			quadrant = Quadrant.PP;
-		else if (dx > 0 && dy <= 0) //+-
-			quadrant = Quadrant.PN;
-		else if (dx <= 0 && dy < 0) //--
-			quadrant = Quadrant.NN;
-		else if (dx < 0 && dy >= 0) //-+
+		else if (dx <= 0 && dy > 0) //-+
 			quadrant = Quadrant.NP;
+		else if (dx < 0 && dy <= 0) //--
+			quadrant = Quadrant.NN;
+		else if (dx >= 0 && dy < 0) //+-
+			quadrant = Quadrant.PN;
+		
+		
 	}
 }

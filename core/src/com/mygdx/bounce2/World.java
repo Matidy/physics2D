@@ -6,14 +6,18 @@ import java.util.ArrayList;
 import com.badlogic.gdx.math.Vector2;
 
 public class World {
-	final static float gravity = 2*9.8f;
+	final static float gravity = 2f*9.8f;
 	final static float air_resistance = 1.5f;
 	final static float move_speed = 40f;
 	
 	public ArrayList<Ball> model_balls;
 	public List<Wall> walls;
 	
-	private ArrayList<CollisionTriple> collision_triples;
+	///////////////////////////DEBUG/////////////////////////////
+	
+	///////////////////////////DEBUG/////////////////////////////
+	
+	private ArrayList<CollisionQuin> collision_quins;
 	
 	public World() {
 		model_balls = new ArrayList<Ball>(0);
@@ -45,101 +49,143 @@ public class World {
 		//Side wall
 		walls.add(new Wall(300, 65, 300, 535));
 		walls.add(new Wall(0, 535, 0, 65));
-		/*//sheer
-		walls.add(new Wall(300, 65, 250, 600)); //broken*/
+		//sheer
+		walls.add(new Wall(300, 65, 250, 600)); //broken
 		
 		//primary ball
 		addBall(new Vector2(150, 300), 10.0f, 10);
 	}
 	
-	private ArrayList<CollisionTriple> checkCollision() {
-		ArrayList<CollisionTriple> collision_triples = new ArrayList<CollisionTriple>(0);
-		Vector2 ball_point;
+	private ArrayList<CollisionQuin> checkCollision() {
+		ArrayList<CollisionQuin> collision_quins = new ArrayList<CollisionQuin>(0); //Container for the set of Wall, Ball and Index involved in a collision (Index lets wall know which ball hit it)
 		Vector2 wall_vector;
-		Vector2 point1;
-		Vector2 point2;
+		float wall_scalar;
+		float x_wall_low_point;
+		float x_wall_high_point;
+		float y_wall_low_point;
+		float y_wall_high_point;
 		double theta;
 		
-		float scalar1;
-		double orth_angle;
-		float wall_ub; // upper bound (point on the wall vector)
-		float wall_lb; // lower bound (point on the wall's orthogonal vector)
-		final float tolerance_distance = 39; // the distance along the orthogonal vector, determining the lower bound
+		Vector2 ball_point;
+		Vector2 intersection;
+		Vector2 normal_intersection;
+		Vector2 wall_to_ball = new Vector2(100, 100);
+		Vector2 ball_change = new Vector2 (0, 0);
+		Vector2 relative_ball_point = new Vector2();
+		Vector2 prev_relative_ball_point = new Vector2();
 		
-		float ball_x;
-		float ball_y;
 		Ball current_ball;
-
-		for (Wall wall: walls) {
-			point1 = wall.getPoint1();
-			point2 = wall.getPoint2();
-			wall_vector = wall.getVector();
-			theta = wall.getTheta();
-			
-			for (int i=0; i<model_balls.size(); i++) {
-				current_ball = model_balls.get(i);
-				ball_point = wall.ball_points.get(i);
-				ball_x = ball_point.x+current_ball.getX();
-				ball_y = ball_point.y+current_ball.getY();
-			
-				if (ball_y >= point1.y && ball_y <= point2.y
-				 || ball_y <= point1.y && ball_y >= point2.y) {
-					if (wall_vector.x == 0) { //Special case: vertical walls - general method divides by wall_vector.x
-						orth_angle = (theta +(1.5*Math.PI))%(2*Math.PI); //+270%360 in degrees
-						wall_lb = point1.x + (tolerance_distance*(float)Math.cos(orth_angle));
-						if (ball_x <= point1.x && ball_x > wall_lb
-						 || ball_x >= point1.x && ball_x < wall_lb)
-							collision_triples.add(new CollisionTriple(wall, current_ball, i));
-					}
+		
+		Vector2 temp_wall_to_ball = new Vector2(100, 100);
+		
+		float ball_change_scalar;
+		float wall_intersection_scalar;
+		float ball_intersection_scalar;
+		Vector2 collision_point;
+	
+		for (int i=0; i<model_balls.size(); i++) {
+			current_ball = model_balls.get(i);
+			for (Wall wall: walls) {
+				if (wall.getPoint1().x < wall.getPoint2().x) {
+					x_wall_low_point = wall.getPoint1().x;
+					x_wall_high_point = wall.getPoint2().x;
 				}
-				if (ball_x >= point1.x && ball_x <= point2.x
-				 || ball_x <= point1.x && ball_x >= point2.x) {
-			
-					scalar1 = Math.abs(((ball_x) - point1.x)/wall_vector.x);
-			
-					wall_ub = point1.y + scalar1*wall_vector.y;
-					orth_angle = (theta +(1.5*Math.PI))%(2*Math.PI); //+270%360 in degrees
-					wall_lb = wall_ub + (tolerance_distance*(float)Math.sin(orth_angle));
-			
-					/*System.out.println("Ball point_y: " + ball_y);
-					System.out.println("Upper y bound: " + wall_ub);
-					System.out.println("Lower y bound: " + wall_lb + "\n");*/
-					if (ball_y <= wall_ub && ball_y > wall_lb
-					 || ball_y >= wall_ub && ball_y < wall_lb)
-						collision_triples.add(new CollisionTriple(wall, current_ball, i));
+				else {
+					x_wall_low_point = wall.getPoint2().x;
+					x_wall_high_point = wall.getPoint1().x;
+				}
+				if (wall.getPoint1().y < wall.getPoint2().y) {
+					y_wall_low_point = wall.getPoint1().y;
+					y_wall_high_point = wall.getPoint2().y;
+				}
+				else {
+					y_wall_low_point = wall.getPoint2().y;
+					y_wall_high_point = wall.getPoint1().y;
+				}
+				wall_vector = wall.getVector();
+				wall_vector.nor();
+					
+				ball_point = wall.ball_points.get(i);
+				relative_ball_point.x = ball_point.x+current_ball.getX();
+				relative_ball_point.y = ball_point.y+current_ball.getY();
+				prev_relative_ball_point.x = ball_point.x+current_ball.getPrevPos().x;
+				prev_relative_ball_point.y = ball_point.y+current_ball.getPrevPos().y;
+				ball_change.x = current_ball.getPos().x-current_ball.getPrevPos().x;
+				ball_change.y = current_ball.getPos().y-current_ball.getPrevPos().y;
+				ball_change.nor();
+				
+				////////
+				// GET INTERSECTION FROM THE RELEVANT BALL POINT BETWEEN THE WALL AND IT'S ORTHOGONAL
+				////
+				intersection = findIntersection(ball_change, prev_relative_ball_point, wall.getVector(), wall.getPoint1());
+		
+				////////
+				// GET WALL POINT1 TO WALL POINT2 SCALAR AND WALL POINT1 TO INTERSECTION POINT SCALAR
+				////
+				wall_scalar = getScalar(wall_vector, wall.getPoint1(), wall.getPoint2());
+				wall_intersection_scalar = getScalar(wall_vector, wall.getPoint1(), intersection);
+				
+				////////
+				// GET BALL TO INTERSECTION POINT SCALAR AND PREV BALL TO CURRENT BALL SCALAR
+				////
+				ball_intersection_scalar = getScalar(ball_change, prev_relative_ball_point, intersection);
+				ball_change_scalar = getScalar(ball_change, prev_relative_ball_point, relative_ball_point);
+				
+				////////
+				// COLLISION TRIGGER CHECK
+				////
+				if (ball_intersection_scalar >= 0 && ball_intersection_scalar <= ball_change_scalar) {
+					if (wall_intersection_scalar >= 0 && wall_intersection_scalar <= wall_scalar) {
+						wall_to_ball = wall.getOrthogonal();
+						collision_point = intersection;
+						collision_quins.add(new CollisionQuin(wall, current_ball, collision_point, wall_to_ball, i));
+						break;
+					}
+					/*else {
+						wall_to_ball.x = current_ball.getPrevPos().x-wall.getPoint1().x;
+						wall_to_ball.y = current_ball.getPrevPos().y-wall.getPoint1().y;
+						temp_wall_to_ball.x = wall.getPoint2().x-current_ball.getPrevPos().x;
+						temp_wall_to_ball.y = wall.getPoint2().y-current_ball.getPrevPos().y;
+						collision_point = wall.getPoint1();
+						if (temp_wall_to_ball.len() < wall_to_ball.len()) {
+							wall_to_ball = temp_wall_to_ball;
+							collision_point = wall.getPoint2();
+						}
+					}*/
+					
 				}
 			}
 		}
-		return collision_triples;
+		return collision_quins;
 	}
 	
-	private void simulateCollision(ArrayList<CollisionTriple> collision_triples) {
-		for(CollisionTriple collision_triple: collision_triples) {
+	private void simulateCollision(ArrayList<CollisionQuin> collision_quins) {
+		for(CollisionQuin collision_quin: collision_quins) {
+			Wall wall = collision_quin.wall;
+			Vector2 collision_point = collision_quin.collision_point;
+			Vector2 wall_to_ball = collision_quin.wall_to_ball;
+			wall_to_ball.nor();
+			
 			// Set ball.pos so the point the collided with the wall is where the ball's vector and the wall's vector intersect
-			Vector2 collision_point;
-			Vector2 relevant_ball_point = new Vector2(collision_triple.ball.getX()+collision_triple.wall.ball_points.get(collision_triple.index).x,
-													  collision_triple.ball.getY()+collision_triple.wall.ball_points.get(collision_triple.index).y);
-			collision_point = findIntersection(collision_triple.ball.getDirection(), relevant_ball_point, collision_triple.wall.getVector(), collision_triple.wall.getPoint1());
-			collision_triple.ball.setX(collision_point.x + collision_triple.wall.getOrthogonal().nor().x*(collision_triple.ball.getRadius()+0.2f));
-			collision_triple.ball.setY(collision_point.y + collision_triple.wall.getOrthogonal().nor().y*(collision_triple.ball.getRadius()+0.2f));
+			collision_quin.ball.setX(collision_point.x + wall_to_ball.x*(collision_quin.ball.getRadius()+0.2f));
+			collision_quin.ball.setY(collision_point.y + wall_to_ball.y*(collision_quin.ball.getRadius()+0.2f));
 		
 			//Calculate new direction vector and force imparted into the wall.
-			Vector2 wall_normal = collision_triple.wall.getOrthogonal().nor();
 			Vector2 scnd_term = new Vector2();
 			Vector2 ball_direction = new Vector2();
 			Vector2 new_ball_direction = new Vector2();
 			// Equation: r=d-2(d.n)n // r-reflection vector
 									 // n-collision surface normal
 								 	 // d-incidence vector
-			ball_direction.x = collision_triple.ball.getDirection().x*collision_triple.ball.getSpeed();
-			ball_direction.y = collision_triple.ball.getDirection().y*collision_triple.ball.getSpeed();
-			scnd_term.x = wall_normal.dot(ball_direction)*wall_normal.x*2;//2(d.n)n
-			scnd_term.y = wall_normal.dot(ball_direction)*wall_normal.y*2;
+			ball_direction.x = collision_quin.ball.getDirection().x*collision_quin.ball.getSpeed();
+			ball_direction.y = collision_quin.ball.getDirection().y*collision_quin.ball.getSpeed();
+			scnd_term.x = wall_to_ball.dot(ball_direction)*wall_to_ball.x*2;//2(d.n)n
+			scnd_term.y = wall_to_ball.dot(ball_direction)*wall_to_ball.y*2;
 			new_ball_direction.x = ball_direction.x - scnd_term.x;
 			new_ball_direction.y = ball_direction.y - scnd_term.y;
 		
-			collision_triple.ball.setSpeed(new_ball_direction.len());
-			collision_triple.ball.setDirection(new_ball_direction);
+			collision_quin.ball.setSpeed(new_ball_direction.len());
+			collision_quin.ball.setDirection(new_ball_direction);
 		}
 	}
 	
@@ -167,9 +213,20 @@ public class World {
 		return intersection;
 	}
 	
+	public float getScalar(Vector2 vector, Vector2 start_point, Vector2 end_point) {
+		float scalar;
+		if (vector.x==0) {
+			scalar = (end_point.y-start_point.y)/vector.y;
+		}
+		else {
+			scalar = (end_point.x-start_point.x)/vector.x;
+		}
+		return scalar;
+	}
+	
 	// Finds the point on the ball that each wall is closest to.
 	///////////////
-	private Vector2 getRelevantBallPoint (Wall wall, Ball ball) {
+	private Vector2 getNearestBallPoint (Wall wall, Ball ball) {
 		double x1, y1;/*, x2, y2;*/
 		double bearing_orth = (wall.getTheta()-(0.5*Math.PI))%(2*Math.PI); // +90(1/2PIr) as radius of circle is the normal to the wall
 		Vector2 point;
@@ -186,7 +243,7 @@ public class World {
 		Ball added_ball = new Ball(pos.x, pos.y , radius, weight);
 		model_balls.add(added_ball);
 		for (Wall wall: walls) {
-			wall.ball_points.add(getRelevantBallPoint(wall, added_ball));
+			wall.ball_points.add(getNearestBallPoint(wall, added_ball));
 		}	
 	}
 	
@@ -209,9 +266,9 @@ public class World {
 		}
 		
 		//Check/simulate collisions
-		collision_triples = checkCollision();
-		if (collision_triples.size() != 0) {
-			simulateCollision(collision_triples);
+		collision_quins = checkCollision();
+		if (collision_quins.size() != 0) {
+			simulateCollision(collision_quins);
 		}
 	}
 }
