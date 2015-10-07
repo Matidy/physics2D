@@ -91,9 +91,9 @@ public class GameScreen extends ScreenAdapter {
 			shapeRenderer.line(wall.getPoint1(), wall.getPoint2());
 		}
 		
-		/*if (debug_mode) {
+		if (debug_mode) {
 			// Intersection point x
-			shapeRenderer.setColor(0.9f, 0.2f, 0f, 1f);
+			/*shapeRenderer.setColor(0.9f, 0.2f, 0f, 1f);
 			shapeRenderer.line(world.intersection.x-4, world.intersection.y-4, world.intersection.x+4, world.intersection.y+4);
 			shapeRenderer.line(world.intersection.x-4, world.intersection.y+4, world.intersection.x+4, world.intersection.y-4);
 			shapeRenderer.line(new Vector2 (150-4, 300-4), new Vector2(150+4, 300+4));
@@ -105,14 +105,12 @@ public class GameScreen extends ScreenAdapter {
 			
 			// ball change vector line
 			shapeRenderer.setColor(0, 0.2f, 0.9f, 1f);
-			shapeRenderer.line(world.prev_relative_ball_point, new Vector2(world.prev_relative_ball_point.x+world.ball_change.x, world.prev_relative_ball_point.y+world.ball_change.y));
+			shapeRenderer.line(world.prev_relative_ball_point, new Vector2(world.prev_relative_ball_point.x+world.ball_change.x, world.prev_relative_ball_point.y+world.ball_change.y));*/
 			
-			// ball offset points
-			shapeRenderer.line(world.prev_relative_ball_point.x-4, world.prev_relative_ball_point.y-4, world.prev_relative_ball_point.x+4, world.prev_relative_ball_point.y+4);
-			shapeRenderer.line(world.prev_relative_ball_point.x-4, world.prev_relative_ball_point.y+4, world.prev_relative_ball_point.x+4, world.prev_relative_ball_point.y-4);
-			//shapeRenderer.line(world.relative_ball_point.x-4, world.relative_ball_point.y-4, world.relative_ball_point.x+4, world.relative_ball_point.y+4);
-			//shapeRenderer.line(world.relative_ball_point.x-4, world.relative_ball_point.y+4, world.relative_ball_point.x+4, world.relative_ball_point.y-4);
-		}*/
+			// closest wall point
+			//shapeRenderer.line(world.closest_wall_point.x-4, world.closest_wall_point.y-4, world.closest_wall_point.x+4, world.closest_wall_point.y+4);
+			//shapeRenderer.line(world.closest_wall_point.x-4, world.closest_wall_point.y+4, world.closest_wall_point.x+4, world.closest_wall_point.y-4);
+		}
 		shapeRenderer.end();
 		
 		

@@ -50,7 +50,7 @@ public class World {
 		walls.add(new Wall(300, 65, 300, 535));
 		walls.add(new Wall(0, 535, 0, 65));
 		//sheer
-		walls.add(new Wall(300, 65, 250, 600)); //broken
+		walls.add(new Wall(300, 65, 250, 600));
 		
 		//primary ball
 		addBall(new Vector2(150, 300), 10.0f, 10);
@@ -60,23 +60,15 @@ public class World {
 		ArrayList<CollisionQuin> collision_quins = new ArrayList<CollisionQuin>(0); //Container for the set of Wall, Ball and Index involved in a collision (Index lets wall know which ball hit it)
 		Vector2 wall_vector;
 		float wall_scalar;
-		float x_wall_low_point;
-		float x_wall_high_point;
-		float y_wall_low_point;
-		float y_wall_high_point;
-		double theta;
 		
 		Vector2 ball_point;
 		Vector2 intersection;
-		Vector2 normal_intersection;
 		Vector2 wall_to_ball = new Vector2(100, 100);
 		Vector2 ball_change = new Vector2 (0, 0);
 		Vector2 relative_ball_point = new Vector2();
 		Vector2 prev_relative_ball_point = new Vector2();
 		
 		Ball current_ball;
-		
-		Vector2 temp_wall_to_ball = new Vector2(100, 100);
 		
 		float ball_change_scalar;
 		float wall_intersection_scalar;
@@ -86,22 +78,6 @@ public class World {
 		for (int i=0; i<model_balls.size(); i++) {
 			current_ball = model_balls.get(i);
 			for (Wall wall: walls) {
-				if (wall.getPoint1().x < wall.getPoint2().x) {
-					x_wall_low_point = wall.getPoint1().x;
-					x_wall_high_point = wall.getPoint2().x;
-				}
-				else {
-					x_wall_low_point = wall.getPoint2().x;
-					x_wall_high_point = wall.getPoint1().x;
-				}
-				if (wall.getPoint1().y < wall.getPoint2().y) {
-					y_wall_low_point = wall.getPoint1().y;
-					y_wall_high_point = wall.getPoint2().y;
-				}
-				else {
-					y_wall_low_point = wall.getPoint2().y;
-					y_wall_high_point = wall.getPoint1().y;
-				}
 				wall_vector = wall.getVector();
 				wall_vector.nor();
 					
@@ -126,33 +102,52 @@ public class World {
 				wall_intersection_scalar = getScalar(wall_vector, wall.getPoint1(), intersection);
 				
 				////////
-				// GET BALL TO INTERSECTION POINT SCALAR AND PREV BALL TO CURRENT BALL SCALAR
-				////
-				ball_intersection_scalar = getScalar(ball_change, prev_relative_ball_point, intersection);
-				ball_change_scalar = getScalar(ball_change, prev_relative_ball_point, relative_ball_point);
-				
-				////////
 				// COLLISION TRIGGER CHECK
 				////
-				if (ball_intersection_scalar >= 0 && ball_intersection_scalar <= ball_change_scalar) {
-					if (wall_intersection_scalar >= 0 && wall_intersection_scalar <= wall_scalar) {
+				if (wall_intersection_scalar >= 0 && wall_intersection_scalar <= wall_scalar) {
+					////////
+					// GET BALL TO INTERSECTION POINT SCALAR AND PREV BALL TO CURRENT BALL SCALAR
+					////
+					ball_intersection_scalar = getScalar(ball_change, prev_relative_ball_point, intersection);
+					ball_change_scalar = getScalar(ball_change, prev_relative_ball_point, relative_ball_point);
+					
+					if (ball_intersection_scalar >= 0 && ball_intersection_scalar <= ball_change_scalar) {
 						wall_to_ball = wall.getOrthogonal();
 						collision_point = intersection;
 						collision_quins.add(new CollisionQuin(wall, current_ball, collision_point, wall_to_ball, i));
 						break;
 					}
-					/*else {
-						wall_to_ball.x = current_ball.getPrevPos().x-wall.getPoint1().x;
-						wall_to_ball.y = current_ball.getPrevPos().y-wall.getPoint1().y;
-						temp_wall_to_ball.x = wall.getPoint2().x-current_ball.getPrevPos().x;
-						temp_wall_to_ball.y = wall.getPoint2().y-current_ball.getPrevPos().y;
-						collision_point = wall.getPoint1();
-						if (temp_wall_to_ball.len() < wall_to_ball.len()) {
-							wall_to_ball = temp_wall_to_ball;
-							collision_point = wall.getPoint2();
-						}
-					}*/
+				}
+				else { // Ball's direction vector means it will not collide with the line at its default point.
+					Vector2 new_ball_point;
+					Vector2 new_prev_rela;
+					Vector2 new_rela;
+					Vector2 closest_wall_point;
 					
+					Vector2 point1_dist = new Vector2(wall.getPoint1().x - current_ball.getPos().x, wall.getPoint1().y - current_ball.getPos().y);
+					Vector2 point2_dist = new Vector2(wall.getPoint2().x - current_ball.getPos().x, wall.getPoint2().y - current_ball.getPos().y);
+					if (point1_dist.len() <= point2_dist.len()) {
+						closest_wall_point = wall.getPoint1();
+					}
+					else {
+						closest_wall_point = wall.getPoint2();
+					}
+					
+					new_prev_rela = findIntersection(ball_change, closest_wall_point, current_ball);
+					if (new_prev_rela.x == new_prev_rela.x) { // Check findIntersection returned vector is not (NaN, NaN).
+						new_ball_point = new Vector2 (new_prev_rela.x-current_ball.getPrevPos().x, new_prev_rela.y-current_ball.getPrevPos().y);
+						new_rela = new Vector2 (current_ball.getPos().x+new_ball_point.x, current_ball.getPos().y+new_ball_point.y);
+					
+						ball_intersection_scalar = getScalar(ball_change, new_prev_rela, closest_wall_point);
+						ball_change_scalar = getScalar(ball_change, new_prev_rela, new_rela);
+					
+						if (ball_intersection_scalar >= 0 && ball_intersection_scalar <= ball_change_scalar) {
+							wall_to_ball = new Vector2(current_ball.getPos().x-new_rela.x, current_ball.getPos().y-new_rela.y);
+							collision_point = closest_wall_point;
+							collision_quins.add(new CollisionQuin(wall, current_ball, collision_point, wall_to_ball, i));
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -213,6 +208,31 @@ public class World {
 		return intersection;
 	}
 	
+	public Vector2 findIntersection (Vector2 vec1, Vector2 c1, Ball ball) {
+		Vector2 intersection = new Vector2();
+		float scalar_pos;
+		float scalar_neg;
+		
+		Vector2 G = new Vector2(c1.x-ball.getPrevPos().x, c1.y-ball.getPrevPos().y);
+		float a = vec1.dot(vec1);
+		float b = 2*(vec1.dot(G));
+		float c = G.dot(G)-ball.getRadius()*ball.getRadius();
+		
+		float discriminant = b*b-4*a*c;
+		scalar_pos = (-b + (float)Math.sqrt(discriminant))/(2*a);
+		scalar_neg = (-b - (float)Math.sqrt(discriminant))/(2*a);
+		
+		if (scalar_pos > scalar_neg) {
+			intersection.x = c1.x + vec1.x*scalar_pos;
+			intersection.y = c1.y + vec1.y*scalar_pos;
+		}
+		else {
+			intersection.x = c1.x + vec1.x*scalar_neg;
+			intersection.y = c1.y + vec1.y*scalar_neg;
+		}
+		return intersection;
+	}
+	
 	public float getScalar(Vector2 vector, Vector2 start_point, Vector2 end_point) {
 		float scalar;
 		if (vector.x==0) {
@@ -257,8 +277,8 @@ public class World {
 	}
 
 	public void update(float dt) {
-		System.out.println("x: "+model_balls.get(0).getX());
-		System.out.println("y: "+model_balls.get(0).getY());
+		//System.out.println("x: "+model_balls.get(0).getX());
+		//System.out.println("y: "+model_balls.get(0).getY());
 		
 		//Update objects
 		for (Ball ball: model_balls) {
@@ -270,5 +290,9 @@ public class World {
 		if (collision_quins.size() != 0) {
 			simulateCollision(collision_quins);
 		}
+		/*Vector2 test = findIntersection(new Vector2(2, 5),
+						new Vector2(20, 2),
+						new Ball(2, 4, 5, 0));
+		System.out.println("test intersection: "+test.x +", "+test.y+"\n");*/
 	}
 }
