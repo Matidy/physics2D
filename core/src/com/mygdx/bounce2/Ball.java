@@ -1,8 +1,12 @@
 package com.mygdx.bounce2;
 
+import java.util.ArrayList;
+
 import com.badlogic.gdx.math.Vector2;
 
 public class Ball extends Position {
+	
+	public ArrayList<CollisionInfo> collisions;
 
 	private Vector2 pos;
 	private Vector2 prev_pos;
@@ -19,6 +23,7 @@ public class Ball extends Position {
 		this.weight = weight;
 		direction = new Vector2(0, 0);
 		speed = 0;
+		collisions = new ArrayList<CollisionInfo>(0);
 	}
 	
 	public Vector2 getPos() 	  { return pos; }
@@ -87,6 +92,22 @@ public class Ball extends Position {
 		float y;
 		y = (float)(Math.sqrt(getRadius()*getRadius() - (x-getX())*(x-getX())) - getY());
 		return y;	
+	}
+	
+	// Keeps track of the collision(s) that occurred closest to the ball.
+	public void maintainCollisions(CollisionInfo collision) {
+		if (!collisions.isEmpty()) {
+			if (collision.intersection_scalar < collisions.get(0).intersection_scalar) {
+				collisions.clear();
+				collisions.add(collision);
+			}
+			else if (collision.intersection_scalar == collisions.get(0).intersection_scalar) {
+				collisions.add(collision);
+			}
+		}
+		else {
+			collisions.add(collision);
+		}
 	}
 	
 	private void setTheta() {

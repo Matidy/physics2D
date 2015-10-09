@@ -17,8 +17,6 @@ public class World {
 	
 	///////////////////////////DEBUG/////////////////////////////
 	
-	private ArrayList<CollisionQuin> collision_quins;
-	
 	public World() {
 		model_balls = new ArrayList<Ball>(0);
 		walls = new ArrayList<Wall>(0);
@@ -56,8 +54,7 @@ public class World {
 		addBall(new Vector2(150, 300), 10.0f, 10);
 	}
 	
-	private ArrayList<CollisionQuin> checkCollision() {
-		ArrayList<CollisionQuin> collision_quins = new ArrayList<CollisionQuin>(0); //Container for the set of Wall, Ball and Index involved in a collision (Index lets wall know which ball hit it)
+	private void checkCollision() {
 		Vector2 wall_vector;
 		float wall_scalar;
 		
@@ -74,6 +71,7 @@ public class World {
 		float wall_intersection_scalar;
 		float ball_intersection_scalar;
 		Vector2 collision_point;
+		CollisionInfo current_collision;
 	
 		for (int i=0; i<model_balls.size(); i++) {
 			current_ball = model_balls.get(i);
@@ -81,41 +79,34 @@ public class World {
 				wall_vector = wall.getVector();
 				wall_vector.nor();
 					
+				ball_change.x = current_ball.getPos().x-current_ball.getPrevPos().x;
+				ball_change.y = current_ball.getPos().y-current_ball.getPrevPos().y;
+				ball_change.nor();
+				
 				ball_point = wall.ball_points.get(i);
 				relative_ball_point.x = ball_point.x+current_ball.getX();
 				relative_ball_point.y = ball_point.y+current_ball.getY();
 				prev_relative_ball_point.x = ball_point.x+current_ball.getPrevPos().x;
 				prev_relative_ball_point.y = ball_point.y+current_ball.getPrevPos().y;
-				ball_change.x = current_ball.getPos().x-current_ball.getPrevPos().x;
-				ball_change.y = current_ball.getPos().y-current_ball.getPrevPos().y;
-				ball_change.nor();
 				
-				////////
 				// GET INTERSECTION FROM THE RELEVANT BALL POINT BETWEEN THE WALL AND IT'S ORTHOGONAL
-				////
 				intersection = findIntersection(ball_change, prev_relative_ball_point, wall.getVector(), wall.getPoint1());
 		
-				////////
 				// GET WALL POINT1 TO WALL POINT2 SCALAR AND WALL POINT1 TO INTERSECTION POINT SCALAR
-				////
 				wall_scalar = getScalar(wall_vector, wall.getPoint1(), wall.getPoint2());
 				wall_intersection_scalar = getScalar(wall_vector, wall.getPoint1(), intersection);
 				
-				////////
 				// COLLISION TRIGGER CHECK
-				////
 				if (wall_intersection_scalar >= 0 && wall_intersection_scalar <= wall_scalar) {
-					////////
 					// GET BALL TO INTERSECTION POINT SCALAR AND PREV BALL TO CURRENT BALL SCALAR
-					////
 					ball_intersection_scalar = getScalar(ball_change, prev_relative_ball_point, intersection);
 					ball_change_scalar = getScalar(ball_change, prev_relative_ball_point, relative_ball_point);
 					
 					if (ball_intersection_scalar >= 0 && ball_intersection_scalar <= ball_change_scalar) {
 						wall_to_ball = wall.getOrthogonal();
 						collision_point = intersection;
-						collision_quins.add(new CollisionQuin(wall, current_ball, collision_point, wall_to_ball, i));
-						break;
+						current_collision = new CollisionInfo(collision_point, wall_to_ball, ball_intersection_scalar);
+						current_ball.maintainCollisions(current_collision);
 					}
 				}
 				else { // Ball's direction vector means it will not collide with the line at its default point.
@@ -136,51 +127,59 @@ public class World {
 					new_prev_rela = findIntersection(ball_change, closest_wall_point, current_ball);
 					if (new_prev_rela.x == new_prev_rela.x) { // Check findIntersection returned vector is not (NaN, NaN).
 						new_ball_point = new Vector2 (new_prev_rela.x-current_ball.getPrevPos().x, new_prev_rela.y-current_ball.getPrevPos().y);
-						new_rela = new Vector2 (current_ball.getPos().x+new_ball_point.x, current_ball.getPos().y+new_ball_point.y);
-					
+						new_rela = new Vector2 (current_ball.getPos().x+new_ball_point.x,
+												current_ball.getPos().y+new_ball_point.y);
+						
 						ball_intersection_scalar = getScalar(ball_change, new_prev_rela, closest_wall_point);
 						ball_change_scalar = getScalar(ball_change, new_prev_rela, new_rela);
 					
 						if (ball_intersection_scalar >= 0 && ball_intersection_scalar <= ball_change_scalar) {
 							wall_to_ball = new Vector2(current_ball.getPos().x-new_rela.x, current_ball.getPos().y-new_rela.y);
 							collision_point = closest_wall_point;
-							collision_quins.add(new CollisionQuin(wall, current_ball, collision_point, wall_to_ball, i));
-							break;
+							current_collision = new CollisionInfo(collision_point, wall_to_ball, ball_intersection_scalar);
+							current_ball.maintainCollisions(current_collision);
 						}
 					}
 				}
 			}
 		}
-		return collision_quins;
 	}
 	
-	private void simulateCollision(ArrayList<CollisionQuin> collision_quins) {
-		for(CollisionQuin collision_quin: collision_quins) {
-			Wall wall = collision_quin.wall;
-			Vector2 collision_point = collision_quin.collision_point;
-			Vector2 wall_to_ball = collision_quin.wall_to_ball;
-			wall_to_ball.nor();
+	//**// TO-DO: Update to handle colliding with multiple walls at once.
+	private void simulateCollision() {
+		for(Ball model_ball : model_balls) {
+			if (!model_ball.collisions.isEmpty()) {
+				Vector2 collision_point = model_ball.collisions.get(0).collision_point;
+				Vector2 wall_to_ball = new Vector2(0, 0);
+				for(CollisionInfo collision : model_ball.collisions) {
+					collision.wall_to_ball.nor();
+					wall_to_ball.x += collision.wall_to_ball.x;
+					wall_to_ball.y += collision.wall_to_ball.y;
+				}
+				wall_to_ball.nor();
 			
-			// Set ball.pos so the point the collided with the wall is where the ball's vector and the wall's vector intersect
-			collision_quin.ball.setX(collision_point.x + wall_to_ball.x*(collision_quin.ball.getRadius()+0.2f));
-			collision_quin.ball.setY(collision_point.y + wall_to_ball.y*(collision_quin.ball.getRadius()+0.2f));
+				// Set ball.pos so the point the collided with the wall is where the ball's vector and the wall's vector intersect
+				model_ball.setX(collision_point.x + wall_to_ball.x*(model_ball.getRadius()+0.2f));// 0.2f sets the ball just above the line to avoid triggering an immediate collision.
+				model_ball.setY(collision_point.y + wall_to_ball.y*(model_ball.getRadius()+0.2f));
 		
-			//Calculate new direction vector and force imparted into the wall.
-			Vector2 scnd_term = new Vector2();
-			Vector2 ball_direction = new Vector2();
-			Vector2 new_ball_direction = new Vector2();
-			// Equation: r=d-2(d.n)n // r-reflection vector
-									 // n-collision surface normal
-								 	 // d-incidence vector
-			ball_direction.x = collision_quin.ball.getDirection().x*collision_quin.ball.getSpeed();
-			ball_direction.y = collision_quin.ball.getDirection().y*collision_quin.ball.getSpeed();
-			scnd_term.x = wall_to_ball.dot(ball_direction)*wall_to_ball.x*2;//2(d.n)n
-			scnd_term.y = wall_to_ball.dot(ball_direction)*wall_to_ball.y*2;
-			new_ball_direction.x = ball_direction.x - scnd_term.x;
-			new_ball_direction.y = ball_direction.y - scnd_term.y;
+				//Calculate new direction vector and force imparted into the wall.
+				Vector2 scnd_term = new Vector2();
+				Vector2 ball_direction = new Vector2();
+				Vector2 new_ball_direction = new Vector2();
+				// Equation: r=d-2(d.n)n // r-reflection vector
+										 // n-collision surface normal
+										 // d-incidence vector
+				ball_direction.x = model_ball.getDirection().x*model_ball.getSpeed();
+				ball_direction.y = model_ball.getDirection().y*model_ball.getSpeed();
+				scnd_term.x = wall_to_ball.dot(ball_direction)*wall_to_ball.x*2;//2(d.n)n
+				scnd_term.y = wall_to_ball.dot(ball_direction)*wall_to_ball.y*2;
+				new_ball_direction.x = ball_direction.x - scnd_term.x;
+				new_ball_direction.y = ball_direction.y - scnd_term.y;
 		
-			collision_quin.ball.setSpeed(new_ball_direction.len());
-			collision_quin.ball.setDirection(new_ball_direction);
+				model_ball.setSpeed(new_ball_direction.len());
+				model_ball.setDirection(new_ball_direction);
+				model_ball.collisions.clear();
+			}
 		}
 	}
 	
@@ -286,10 +285,9 @@ public class World {
 		}
 		
 		//Check/simulate collisions
-		collision_quins = checkCollision();
-		if (collision_quins.size() != 0) {
-			simulateCollision(collision_quins);
-		}
+		checkCollision();
+		simulateCollision();
+		
 		/*Vector2 test = findIntersection(new Vector2(2, 5),
 						new Vector2(20, 2),
 						new Ball(2, 4, 5, 0));
